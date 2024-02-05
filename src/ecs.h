@@ -10,8 +10,8 @@ typedef size_t EntityID;
 
 typedef struct {
     COMPONENT_BASE
-    int         x;
-    int         y;
+    float   x;
+    float   y;
 } PositionComponent;
 
 typedef struct {
@@ -23,8 +23,8 @@ typedef struct {
 typedef struct {
     COMPONENT_BASE
     uint32_t    mass;
-    int         vel_x;
-    int         vel_y;
+    float       vel_x;
+    float       vel_y;
 } RigidBodyComponent;
 
 typedef struct {

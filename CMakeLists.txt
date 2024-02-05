@@ -42,11 +42,7 @@ endif()
 #### project files ####
 
 file(GLOB_RECURSE PROJECT_SOURCES src/*.c)
-
 set(PROJECT_INCLUDE_DIRS src/)
-set(PLATFORM_INCLUDE_DIRS ${PROJECT_INCLUDE_DIRS} src/platform)
-set(GAME_API_HEADER src/game/api/game_interface.h)
-set(GAME_PRIVATE_INCLUDE_DIRS ${PROJECT_INCLUDE_DIRS} src/game)
 
 #### targets ####
 add_executable              (${PROJECT_NAME})
