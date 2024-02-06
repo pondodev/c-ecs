@@ -1,6 +1,7 @@
 #include "systems.h"
 
 #include "ecs.h"
+#include "vec_maths.h"
 #include "raylib.h"
 
 void system_draw(void) {
@@ -20,10 +21,12 @@ void system_draw(void) {
         if (pos == NULL)
             continue;
 
-        DrawCircle(pos->x, pos->y, disp->radius, disp->color);
+        DrawCircle(pos->pos.x, pos->pos.y, disp->radius, disp->color);
     }
 }
 
+#define GRAVITY 2000.f
+#define DRAG_COEFFICIENT 0.01f
 void system_physics(const float delta_time) {
     RigidBodyComponent* rigid_bodies = NULL;
     size_t rigid_body_count = 0;
@@ -31,32 +34,58 @@ void system_physics(const float delta_time) {
     if (rigid_bodies == NULL || rigid_body_count == 0)
         return;
 
-    const int screen_width = GetScreenWidth();
-    const int screen_height = GetScreenHeight();
+    const float screen_width = GetScreenWidth();
+    const float screen_height = GetScreenHeight();
 
     for (size_t i = 0; i < rigid_body_count; ++i) {
-        const RigidBodyComponent* rb = &rigid_bodies[i];
+        RigidBodyComponent* rb = &rigid_bodies[i];
         if (rb == NULL)
             continue;
 
         const EntityID id = rb->owner;
         PositionComponent* pos = ecs_get_position_component(id);
-        if (pos == NULL)
+        const CircleColliderComponent* col = ecs_get_circle_collider_component(id);
+        if (pos == NULL || col == NULL)
             continue;
 
-        pos->x += rb->vel_x * delta_time;
-        pos->y += rb->vel_y * delta_time;
+        // modify velocity based on gravity and drag
+        rb->velocity.y += GRAVITY * rb->mass * delta_time;
 
-        // wrap around
-        // TODO: actual physics will bounce balls off edge of screen, so we will remove this
-        if (pos->x < 0)
-            pos->x = screen_width + pos->x;
-        else if (pos->x > screen_width)
-            pos->x = pos->x - screen_width;
+        Vec2 drag = vec2_invert(rb->velocity);
+        drag = vec2_mul(drag, DRAG_COEFFICIENT);
 
-        if (pos->y < 0)
-            pos->y = screen_height + pos->y;
-        else if (pos->y > screen_height)
-            pos->y = pos->y - screen_height;
+        rb->velocity = vec2_add(rb->velocity, drag);
+
+        Vec2 new_pos = {
+            .x = pos->pos.x + (rb->velocity.x * delta_time),
+            .y = pos->pos.y + (rb->velocity.y * delta_time),
+        };
+
+        const Vec2 max_bound = {
+            .x = screen_width - col->radius,
+            .y = screen_height - col->radius,
+        };
+        const Vec2 min_bound = {
+            .x = col->radius,
+            .y = col->radius,
+        };
+
+        if (new_pos.x > max_bound.x) {
+            rb->velocity.x *= -1;
+            new_pos.x = max_bound.x;
+        } else if (new_pos.x < min_bound.x) {
+            rb->velocity.x *= -1;
+            new_pos.x = min_bound.x;
+        }
+
+        if (new_pos.y > max_bound.y) {
+            rb->velocity.y *= -1;
+            new_pos.y = max_bound.y;
+        } else if (new_pos.y < min_bound.y) {
+            rb->velocity.y *= -1;
+            new_pos.y = min_bound.y;
+        }
+
+        pos->pos = new_pos;
     }
 }

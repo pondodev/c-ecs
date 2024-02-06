@@ -9,9 +9,13 @@ typedef size_t EntityID;
 #define COMPONENT_BASE EntityID owner;
 
 typedef struct {
+    float x;
+    float y;
+} Vec2;
+
+typedef struct {
     COMPONENT_BASE
-    float   x;
-    float   y;
+    Vec2    pos;
 } PositionComponent;
 
 typedef struct {
@@ -23,8 +27,7 @@ typedef struct {
 typedef struct {
     COMPONENT_BASE
     uint32_t    mass;
-    float       vel_x;
-    float       vel_y;
+    Vec2        velocity;
 } RigidBodyComponent;
 
 typedef struct {

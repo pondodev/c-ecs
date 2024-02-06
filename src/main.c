@@ -23,6 +23,7 @@ int main(void) {
     assert(ENTITY_COUNT <= MAX_COMPONENTS);
 
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "c ecs");
+    SetTargetFPS(60);
     ecs_init(MAX_COMPONENTS);
 
     // init all entities
@@ -34,8 +35,8 @@ int main(void) {
         RigidBodyComponent* rb          = ecs_new_rigid_body_component(id);
         CircleColliderComponent* col    = ecs_new_circle_collider_component(id);
 
-        pos->x = _irand_range(0, WINDOW_WIDTH);
-        pos->y = _irand_range(0, WINDOW_HEIGHT);
+        pos->pos.x = _irand_range(0, WINDOW_WIDTH);
+        pos->pos.y = _irand_range(0, WINDOW_HEIGHT);
         disp->color = (Color) {
             .r = _irand_range(0, 255),
             .g = _irand_range(0, 255),
@@ -48,19 +49,19 @@ int main(void) {
         col->radius = disp->radius;
 
         rb->mass = 1; // TODO: do we want this to be based on size?
-        rb->vel_x = _frand_range(-50.f, 50.f);
-        rb->vel_y = _frand_range(-50.f, 50.f);
+        rb->velocity.x = _frand_range(-50.f, 50.f);
+        rb->velocity.y = _frand_range(-50.f, 50.f);
 
         // move entities within the bounds of the screen
-        if (pos->x - disp->radius < 0)
-            pos->x = disp->radius;
-        else if (pos->x + disp->radius > WINDOW_WIDTH)
-            pos->x = WINDOW_WIDTH - disp->radius;
+        if (pos->pos.x - disp->radius < 0)
+            pos->pos.x = disp->radius;
+        else if (pos->pos.x + disp->radius > WINDOW_WIDTH)
+            pos->pos.x = WINDOW_WIDTH - disp->radius;
 
-        if (pos->y - disp->radius < 0)
-            pos->y = disp->radius;
-        else if (pos->y + disp->radius > WINDOW_HEIGHT)
-            pos->y = WINDOW_HEIGHT - disp->radius;
+        if (pos->pos.y - disp->radius < 0)
+            pos->pos.y = disp->radius;
+        else if (pos->pos.y + disp->radius > WINDOW_HEIGHT)
+            pos->pos.y = WINDOW_HEIGHT - disp->radius;
     }
 
     while (! WindowShouldClose())
