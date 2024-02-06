@@ -21,7 +21,9 @@ void system_draw(void) {
         if (pos == NULL)
             continue;
 
+        ecs_lock_mutex();
         DrawCircle(pos->pos.x, pos->pos.y, disp->radius, disp->color);
+        ecs_unlock_mutex();
     }
 }
 
@@ -48,6 +50,7 @@ void system_physics(const float delta_time) {
         if (pos == NULL || col == NULL)
             continue;
 
+        ecs_lock_mutex();
         // modify velocity based on gravity and drag
         rb->velocity.y += GRAVITY * rb->mass * delta_time;
 
@@ -87,5 +90,6 @@ void system_physics(const float delta_time) {
         }
 
         pos->pos = new_pos;
+        ecs_unlock_mutex();
     }
 }

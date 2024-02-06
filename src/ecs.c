@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 typedef struct {
     PositionComponent*          positions;
@@ -18,6 +19,7 @@ static EntityID         s_next_entity       = 1;
 static Components       s_components;
 static size_t           s_max_components    = 0;
 static unsigned char*   s_components_buffer = NULL;
+static pthread_mutex_t  s_lock;
 
 static void* _get_component(void* component_array, size_t stride, EntityID entity_id);
 static void* _get_free_component(void* component_array, size_t stride);
@@ -25,6 +27,8 @@ static void* _get_free_component(void* component_array, size_t stride);
 void ecs_init(const size_t max_components) {
     if (s_components_buffer != NULL)
         return;
+
+    pthread_mutex_init(&s_lock, NULL);
 
     memset(&s_components, 0, sizeof(s_components));
 
@@ -66,6 +70,14 @@ void ecs_free(void) {
         return;
 
     free(s_components_buffer);
+}
+
+void ecs_lock_mutex(void) {
+    pthread_mutex_lock(&s_lock);
+}
+
+void ecs_unlock_mutex(void) {
+    pthread_mutex_unlock(&s_lock);
 }
 
 EntityID ecs_new_entity(void) {

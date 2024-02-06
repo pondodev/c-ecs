@@ -38,6 +38,9 @@ typedef struct {
 void ecs_init(const size_t max_components);
 void ecs_free(void);
 
+void ecs_lock_mutex(void);
+void ecs_unlock_mutex(void);
+
 EntityID ecs_new_entity(void);
 
 PositionComponent* ecs_new_position_component(const EntityID entity_id);

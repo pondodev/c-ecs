@@ -6,6 +6,7 @@
 #include "raylib.h"
 #include "ecs.h"
 #include "systems.h"
+#include "physics_thread.h"
 #include "helpers.h"
 
 #define WINDOW_WIDTH 512
@@ -13,8 +14,10 @@
 #define MAX_COMPONENTS 100
 #define ENTITY_COUNT 100
 
-static EntityID s_entities[MAX_COMPONENTS];
+static EntityID s_entities[ENTITY_COUNT];
+static int s_running = 1;
 
+static void _init_entities(void);
 static void _rand_init(void);
 static int _irand_range(int min, int max);
 static float _frand_range(float min, float max);
@@ -23,10 +26,34 @@ int main(void) {
     assert(ENTITY_COUNT <= MAX_COMPONENTS);
 
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "c ecs");
-    SetTargetFPS(60);
     ecs_init(MAX_COMPONENTS);
+    _init_entities();
 
-    // init all entities
+    if (! start_physics_thread())
+        s_running = 0;
+
+    while (! WindowShouldClose() && s_running) {
+        // drawing
+        BeginDrawing();
+        {
+            ClearBackground(RAYWHITE);
+
+            system_draw();
+
+            DrawFPS(0, 0);
+        }
+        EndDrawing();
+    }
+
+    join_physics_thread();
+
+    CloseWindow();
+    ecs_free();
+
+    return 0;
+}
+
+static void _init_entities(void) {
     for (size_t i = 0; i < ENTITY_COUNT; ++i) {
         EntityID id = ecs_new_entity();
         s_entities[i] = id;
@@ -63,30 +90,6 @@ int main(void) {
         else if (pos->pos.y + disp->radius > WINDOW_HEIGHT)
             pos->pos.y = WINDOW_HEIGHT - disp->radius;
     }
-
-    while (! WindowShouldClose())
-    {
-        const float delta_time = GetFrameTime();
-
-        // update state
-        system_physics(delta_time);
-
-        // drawing
-        BeginDrawing();
-        {
-            ClearBackground(RAYWHITE);
-
-            system_draw();
-
-            DrawFPS(0, 0);
-        }
-        EndDrawing();
-    }
-
-    CloseWindow();
-    ecs_free();
-
-    return 0;
 }
 
 static void _rand_init(void) {
