@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <pthread.h>
+#include <pthread/sched.h>
 #include <stdatomic.h>
 #include <string.h>
 #include <unistd.h>
@@ -9,6 +10,7 @@
 #include <stdint.h>
 
 #include "systems.h"
+#include "ecs.h"
 
 #define PHYSICS_STEPS_PER_SECOND 60
 #define MS_PER_PHYSICS_STEP 1000 / PHYSICS_STEPS_PER_SECOND
@@ -46,6 +48,8 @@ static void* _physics_thread(void* args) {
     uint64_t last_step_ms = _timeval_to_timestamp_ms(thread_start);
 
     while (s_app_running) {
+        ecs_lock_mutex();
+
         struct timeval step_start;
         gettimeofday(&step_start, NULL);
 
@@ -56,6 +60,9 @@ static void* _physics_thread(void* args) {
         system_physics(delta_time);
 
         last_step_ms = step_start_ms;
+
+        ecs_unlock_mutex();
+        sched_yield();
 
         struct timeval step_end;
         gettimeofday(&step_end, NULL);

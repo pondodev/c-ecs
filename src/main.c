@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <pthread/sched.h>
 
 #include "raylib.h"
 #include "ecs.h"
@@ -38,7 +39,12 @@ int main(void) {
         {
             ClearBackground(RAYWHITE);
 
+            ecs_lock_mutex();
+
             system_draw();
+
+            ecs_unlock_mutex();
+            sched_yield();
 
             DrawFPS(0, 0);
         }

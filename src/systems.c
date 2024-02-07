@@ -1,14 +1,10 @@
 #include "systems.h"
 
-#include <pthread/sched.h>
-
 #include "ecs.h"
 #include "vec_maths.h"
 #include "raylib.h"
 
 void system_draw(void) {
-    ecs_lock_mutex();
-
     DisplayComponent* displays = NULL;
     size_t display_count = 0;
     ecs_get_display_component_array(&displays, &display_count);
@@ -27,16 +23,11 @@ void system_draw(void) {
 
         DrawCircle(pos->pos.x, pos->pos.y, disp->radius, disp->color);
     }
-
-    ecs_unlock_mutex();
-    sched_yield();
 }
 
 #define GRAVITY 2000.f
 #define DRAG_COEFFICIENT 0.01f
 void system_physics(const float delta_time) {
-    ecs_lock_mutex();
-
     RigidBodyComponent* rigid_bodies = NULL;
     size_t rigid_body_count = 0;
     ecs_get_rigid_body_component_array(&rigid_bodies, &rigid_body_count);
@@ -97,7 +88,4 @@ void system_physics(const float delta_time) {
 
         pos->pos = new_pos;
     }
-
-    ecs_unlock_mutex();
-    sched_yield();
 }
