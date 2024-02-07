@@ -26,8 +26,8 @@ typedef struct {
 
 typedef struct {
     COMPONENT_BASE
-    uint32_t    mass;
-    Vec2        velocity;
+    float   mass;
+    Vec2    velocity;
 } RigidBodyComponent;
 
 typedef struct {

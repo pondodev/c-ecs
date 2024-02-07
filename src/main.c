@@ -81,7 +81,7 @@ static void _init_entities(void) {
 
         col->radius = disp->radius;
 
-        rb->mass = 1; // TODO: do we want this to be based on size?
+        rb->mass = col->radius / 10.f;
         rb->velocity.x = _frand_range(-50.f, 50.f);
         rb->velocity.y = _frand_range(-50.f, 50.f);
 
