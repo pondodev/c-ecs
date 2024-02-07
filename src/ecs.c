@@ -69,6 +69,7 @@ void ecs_free(void) {
     if (s_components_buffer == NULL)
         return;
 
+    pthread_mutex_destroy(&s_lock);
     free(s_components_buffer);
 }
 
