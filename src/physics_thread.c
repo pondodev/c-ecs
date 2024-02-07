@@ -12,12 +12,14 @@
 
 #define PHYSICS_STEPS_PER_SECOND 60
 #define MS_PER_PHYSICS_STEP 1000 / PHYSICS_STEPS_PER_SECOND
+#define US_PER_PHYSICS_STEP MS_PER_PHYSICS_STEP * 1000
 
 static pthread_t s_thread;
 static atomic_int s_app_running = 1;
 
 static void* _physics_thread(void* args);
-static uint64_t _get_unix_timestamp_ms(void);
+static uint64_t _timeval_to_timestamp_ms(struct timeval tv);
+static uint32_t _get_diff_us(struct timeval start, struct timeval end);
 
 int start_physics_thread(void) {
     const int err = pthread_create(&s_thread, NULL, _physics_thread, NULL);
@@ -39,35 +41,56 @@ void join_physics_thread(void) {
 static void* _physics_thread(void* args) {
     (void)args;
 
-    uint64_t last_step = _get_unix_timestamp_ms();
+    struct timeval thread_start;
+    gettimeofday(&thread_start, NULL);
+    uint64_t last_step_ms = _timeval_to_timestamp_ms(thread_start);
 
     while (s_app_running) {
-        const uint64_t step_start = _get_unix_timestamp_ms();
-        const float step_diff_ms = step_start - last_step;
+        struct timeval step_start;
+        gettimeofday(&step_start, NULL);
+
+        const uint64_t step_start_ms = _timeval_to_timestamp_ms(step_start);
+        const float step_diff_ms = step_start_ms - last_step_ms;
 
         const float delta_time = step_diff_ms / 1000.f;
         system_physics(delta_time);
 
-        last_step = step_start;
+        last_step_ms = step_start_ms;
 
-        const uint64_t now = _get_unix_timestamp_ms();
-        const uint64_t diff = now - step_start;
-        // TODO: something is wrong with this calculation
-        const uint64_t ms_to_sleep = MS_PER_PHYSICS_STEP - diff;
-        //usleep(ms_to_sleep * 1000);
-        usleep(MS_PER_PHYSICS_STEP * 1000);
+        struct timeval step_end;
+        gettimeofday(&step_end, NULL);
+
+        const uint32_t time_taken_us = _get_diff_us(step_start, step_end);
+        const uint32_t us_to_sleep = US_PER_PHYSICS_STEP - time_taken_us;
+
+        usleep(us_to_sleep);
     }
 
     return NULL;
 }
 
-static uint64_t _get_unix_timestamp_ms(void) {
-    struct timeval t;
-    gettimeofday(&t, NULL);
+static uint64_t _timeval_to_timestamp_ms(struct timeval tv) {
+    const uint64_t secs = tv.tv_sec;
+    const uint64_t msecs = tv.tv_usec / 1000;
 
-    const uint64_t secs = t.tv_sec;
-    const uint64_t msecs = t.tv_usec / 1000;
+    return (secs * 1000) + msecs;
+}
 
-    return (secs*1000) + msecs;
+static uint32_t _get_diff_us(struct timeval start, struct timeval end) {
+    const uint32_t start_ms = start.tv_sec / 1000;
+    const uint32_t end_ms   = end.tv_sec / 1000;
+    const uint32_t start_us = start.tv_usec;
+    const uint32_t end_us   = start.tv_usec;
+
+    uint32_t diff_us = 0;
+    if (end_us < start_us) {
+        const uint32_t overflow = start_us - end_us;
+        diff_us = 1000 - overflow;
+    } else {
+        diff_us = end_us - start_us;
+    }
+
+    diff_us += (end_ms - start_ms) * 1000;
+    return diff_us;
 }
 
