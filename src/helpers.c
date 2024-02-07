@@ -3,13 +3,19 @@
 #include <string.h>
 #include <stdio.h>
 
+typedef struct {
+    TimerCallback   callback;
+    void*           args;
+} CallbackInfo;
+
 #define MAX_TIMERS 50
 #define PRETTY_FORMAT_BUF_SIZE 30
 
+static int s_timer_in_use[MAX_TIMERS];
 static struct timeval s_start_times[MAX_TIMERS];
 static char s_pretty_format_buf[PRETTY_FORMAT_BUF_SIZE];
 
-static TimerCallback s_timer_callbacks[MAX_TIMERS];
+static CallbackInfo s_timer_callbacks[MAX_TIMERS];
 static uint64_t s_timer_durations[MAX_TIMERS];
 
 static void _init(void);
@@ -55,7 +61,7 @@ char* pretty_format_time_diff(const struct timeval time_diff) {
     return s_pretty_format_buf;
 }
 
-TimerID start_timer(TimerCallback callback, uint64_t duration_ms) {
+TimerID start_timer(TimerCallback callback, void* args, uint64_t duration_ms) {
     _init();
 
     if (callback == NULL)
@@ -64,8 +70,12 @@ TimerID start_timer(TimerCallback callback, uint64_t duration_ms) {
     TimerID available_timer = _get_free_timer();
     if (available_timer != INVALID_TIMER_ID) {
         gettimeofday(&s_start_times[available_timer], NULL);
-        s_timer_callbacks[available_timer] = callback;
         s_timer_durations[available_timer] = duration_ms;
+
+        s_timer_callbacks[available_timer] = (CallbackInfo) {
+            .callback = callback,
+            .args = args,
+        };
     }
 
     return available_timer;
@@ -77,9 +87,9 @@ void update_timer(TimerID* timer_id) {
 
     const struct timeval start_time     = s_start_times[*timer_id];
     const uint64_t timer_duration_ms    = s_timer_durations[*timer_id];
-    const TimerCallback callback        = s_timer_callbacks[*timer_id];
+    const CallbackInfo callback_info    = s_timer_callbacks[*timer_id];
 
-    if (callback == NULL) {
+    if (callback_info.callback == NULL) {
         _free_timer(timer_id);
         return;
     }
@@ -94,7 +104,10 @@ void update_timer(TimerID* timer_id) {
     if (diff < timer_duration_ms)
         return;
 
-    callback();
+    TimerCallback callback = callback_info.callback;
+    void* args = callback_info.args;
+    callback(args);
+
     _free_timer(timer_id);
 }
 
@@ -102,16 +115,19 @@ static void _init(void) {
     static int initialised = 0;
     if (initialised) return;
 
+    memset(s_timer_in_use, 0, sizeof(s_timer_in_use[0])*MAX_TIMERS);
     memset(s_start_times, 0, sizeof(s_start_times[0])*MAX_TIMERS);
     memset(s_timer_callbacks, 0, sizeof(s_timer_callbacks[0])*MAX_TIMERS);
     memset(s_timer_durations, 0, sizeof(s_timer_durations[0])*MAX_TIMERS);
+
+    initialised = 1;
 }
 
 static TimerID _get_free_timer(void) {
     TimerID available_timer = 0;
     while (available_timer < MAX_TIMERS) {
-        // not in use, let's take it
-        if (s_start_times[available_timer].tv_sec == 0)
+        printf("checking if %d is free\n", available_timer);
+        if (! s_timer_in_use[available_timer])
             break;
 
         ++available_timer;
@@ -120,12 +136,14 @@ static TimerID _get_free_timer(void) {
     if (available_timer >= MAX_TIMERS)
         return INVALID_TIMER_ID;
 
+    s_timer_in_use[available_timer] = 1;
     return available_timer;
 }
 
 static void _free_timer(TimerID* timer_id) {
-    memset(&s_start_times[*timer_id], 0, sizeof(s_start_times[*timer_id]));
-    s_timer_callbacks[*timer_id] = NULL;
+    s_timer_in_use[*timer_id] = 0;
+    memset(&s_start_times[*timer_id], 0, sizeof(s_start_times[0]));
+    memset(&s_timer_callbacks[*timer_id], 0, sizeof(s_timer_callbacks[0]));
     s_timer_durations[*timer_id] = 0;
 
     // invalidate the caller's ID so it can't be used again
