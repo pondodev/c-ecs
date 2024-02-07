@@ -12,10 +12,12 @@
 
 #define WINDOW_WIDTH 512
 #define WINDOW_HEIGHT 512
-#define MAX_COMPONENTS 100
-#define ENTITY_COUNT 100
 
-static EntityID s_entities[ENTITY_COUNT];
+#define MAX_ENTITY_COUNT 1000
+#define START_ENTITY_COUNT 10
+#define MAX_COMPONENTS 100
+
+static EntityID s_entities[MAX_ENTITY_COUNT];
 static int s_running = 1;
 
 static void _init_entities(void);
@@ -60,7 +62,7 @@ int main(void) {
 }
 
 static void _init_entities(void) {
-    for (size_t i = 0; i < ENTITY_COUNT; ++i) {
+    for (size_t i = 0; i < START_ENTITY_COUNT; ++i) {
         EntityID id = ecs_new_entity();
         s_entities[i] = id;
         PositionComponent* pos          = ecs_new_position_component(id);
