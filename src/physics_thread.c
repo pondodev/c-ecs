@@ -89,15 +89,16 @@ static uint32_t _get_diff_us(struct timeval start, struct timeval end) {
     const uint32_t start_us = start.tv_usec;
     const uint32_t end_us   = start.tv_usec;
 
+    uint32_t diff_ms = end_ms - start_ms;
     uint32_t diff_us = 0;
     if (end_us < start_us) {
         const uint32_t overflow = start_us - end_us;
         diff_us = 1000 - overflow;
+        diff_ms += 1;
     } else {
         diff_us = end_us - start_us;
     }
 
-    diff_us += (end_ms - start_ms) * 1000;
-    return diff_us;
+    return diff_us + (diff_ms * 1000);
 }
 
