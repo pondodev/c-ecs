@@ -14,8 +14,7 @@ static void _init(void);
 TimerID start_time_measure(void) {
     _init();
     TimerID available_timer = 0;
-    while (available_timer < MAX_TIMERS)
-    {
+    while (available_timer < MAX_TIMERS) {
         // not in use, let's take it
         if (s_start_times[available_timer].tv_sec == 0)
             break;
@@ -42,6 +41,7 @@ struct timeval end_time_measure(TimerID timer_id) {
         .tv_sec = current_time.tv_sec - start_time->tv_sec,
         .tv_usec = current_time.tv_usec - start_time->tv_usec,
     };
+
     // zero it out to denote we're done with it
     memset(start_time, 0, sizeof(s_start_times[0]));
 

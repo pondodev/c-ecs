@@ -27,10 +27,12 @@ void system_draw(void) {
 
 #define GRAVITY 2000.f
 #define DRAG_COEFFICIENT 0.01f
+
 void system_physics(const float delta_time) {
     RigidBodyComponent* rigid_bodies = NULL;
     size_t rigid_body_count = 0;
     ecs_get_rigid_body_component_array(&rigid_bodies, &rigid_body_count);
+
     if (rigid_bodies == NULL || rigid_body_count == 0)
         return;
 
@@ -45,6 +47,7 @@ void system_physics(const float delta_time) {
         const EntityID id = rb->owner;
         PositionComponent* pos = ecs_get_position_component(id);
         const CircleColliderComponent* col = ecs_get_circle_collider_component(id);
+
         if (pos == NULL || col == NULL)
             continue;
 
